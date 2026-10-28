@@ -15,4 +15,4 @@ select
   adviser_id,
   fee_date,
   round(fee_amount, 2) as fee_amount
-from deduplicated
+from deduplicated;
