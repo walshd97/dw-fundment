@@ -144,7 +144,7 @@ Thank you for your time and effort. We appreciate it!
 
 =========================================
 
-## Solution
+# Solution
 
 ### Overview
 
@@ -234,6 +234,7 @@ This means:
 This approach reflects adviser assignment at the time the fee was charged and avoids assigning a client’s entire value to only one adviser.
 
 ### Assumptions & tradeoffs
+
 - Exact duplicates are removed from the standardised layer
 - `client_nino` is treated as personally identifiable information (PII) and should not be used as part of analysis. In a production environment, this information would be redacted or access limited.
 - Separate `client` and `adviser` dimension tables were not created because the data did not contain any additional attributes.
@@ -261,9 +262,11 @@ The raw layer is retained so analytics results can be traced back to the source 
 For a backfill, the source data would be reloaded and the standardised and analytics tables rebuilt. Results would then be reconciled against the previous output.
 
 ### Schema Changes
-- As the `main.tf` file specifies the schema of the `google_bigquery_table.raw_fees`, any new columns would have to be discussed in advance because new columns would cause the CSV load step to fail.
+
+As the `main.tf` file specifies the schema of the `google_bigquery_table.raw_fees`, any new columns would have to be discussed in advance because new columns would cause the CSV load step to fail.
 
 ### Evolution
+
 For future evolution there are a few things which would need to be considered or implemented:
 - CI/CD pipelines to manage Terraform and SQL validation. Prevents untested/unapproved changes being deployed into production. This can go along with separate DEV/UAT/PROD environments.
 - Creation and scheduling of jobs to ensure regular updating of the Analytics Layer tables.
