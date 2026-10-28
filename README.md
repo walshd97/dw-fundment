@@ -150,9 +150,9 @@ Thank you for your time and effort. We appreciate it!
 
 This repository contains a basic analytics pipeline allowing users to analyse Fundment Client Platform fees.
 
-The solution will:
+The solution:
 
-1) Store the raw CSV in Google Cloud Storage
+1) Stores the raw CSV in Google Cloud Storage
 2) Loads the raw data into BigQuery
 3) Creates a standardised fee table
 4) Calculates client level lifetime value (LTV)
@@ -239,7 +239,7 @@ This approach reflects adviser assignment at the time the fee was charged and av
 - `client_nino` is treated as personally identifiable information (PII) and should not be used as part of analysis. In a production environment, this information would be redacted or access limited.
 - Separate `client` and `adviser` dimension tables were not created because the data did not contain any additional attributes.
 - SQL queries use `CREATE OR REPLACE TABLE` to make reruns deterministic.
-- Data quality checks have not yet been implemented but would need to be going forward ensuring. BigQuery assertions could be used for this
+- Data quality checks have not yet been implemented but would need to be going forward ensuring. In production I would add BigQuery assertions for nulls, duplicate, date ranges, fee precision, negative correction and reconiliation checks.
 
 ### Pipeline execution
 
@@ -255,7 +255,7 @@ terraform -chdir=terraform apply
 The script uploads the CSV, replaces the raw BigQuery table and executes the SQL models in order
 
 ### Auditing
-The raw layer is retained so analytics results can be traced back to the source if needed
+The raw layer is retained so analytics results can be traced back to the source if needed. Production checks would reconcile raw and clean row counts and duplicate removals.
 
 ### Backfills and reprocessing
 
