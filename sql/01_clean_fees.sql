@@ -1,4 +1,4 @@
-CREATE OR REPLACE TABLE `fundment-takehome-dw.fees.clean_fees` AS
+CREATE OR REPLACE TABLE `fundment-dw.fees.clean_fees` AS
 
 with deduplicated as (
   select distinct 
@@ -7,7 +7,7 @@ with deduplicated as (
     adviser_id, 
     fee_date, 
     fee_amount
-  from `fundment-takehome-dw.fees.raw_fees`
+  from `fundment-dw.fees.raw_fees`
 )
 select
   client_id, 

@@ -1,10 +1,10 @@
-CREATE OR REPLACE TABLE `fundment-takehome-dw.fees.adviser_six_month_ltv` AS
+CREATE OR REPLACE TABLE `fundment-dw.fees.adviser_six_month_ltv` AS
 
 with first_fees as (
     select
         client_id,
         min(date_trunc(fee_date, month)) as first_fee_month
-    from `fundment-takehome-dw.fees.clean_fees`
+    from `fundment-dw.fees.clean_fees`
     group by
         client_id
 ),
@@ -12,7 +12,7 @@ with first_fees as (
 data_end as (
     select
         max(date_trunc(fee_date, month)) as data_end_month
-    from `fundment-takehome-dw.fees.clean_fees`
+    from `fundment-dw.fees.clean_fees`
     -- In production, current_date() could be used to calculate
     -- complete and incomplete observation periods.
 ),
@@ -34,7 +34,7 @@ fees_with_month_number as (
     ec.first_fee_month,
     cf.fee_date,
     date_diff(cf.fee_date, ec.first_fee_month, month) + 1 as month_number
-  from `fundment-takehome-dw.fees.clean_fees` cf
+  from `fundment-dw.fees.clean_fees` cf
   join eligible_clients ec
   on cf.client_id = ec.client_id
 ),

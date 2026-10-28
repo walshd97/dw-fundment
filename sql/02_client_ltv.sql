@@ -1,10 +1,10 @@
-create or replace table `fundment-takehome-dw.fees.client_ltv` as
+create or replace table `fundment-dw.fees.client_ltv` as
 
 with first_fees as (
     select
         client_id,
         min(date_trunc(fee_date, month)) as first_fee_month
-    from `fundment-takehome-dw.fees.clean_fees`
+    from `fundment-dw.fees.clean_fees`
     group by
         client_id
 ),
@@ -12,7 +12,7 @@ with first_fees as (
 data_end as (
     select
         max(date_trunc(fee_date, month)) as data_end_month
-    from `fundment-takehome-dw.fees.clean_fees`
+    from `fundment-dw.fees.clean_fees`
     -- In production, current_date() could be used to calculate
     -- complete and incomplete observation periods.
 ),
@@ -24,7 +24,7 @@ fees_with_month as (
         cf.fee_amount,
         ff.first_fee_month,
         date_diff(date_trunc(cf.fee_date, month), ff.first_fee_month, month) + 1 as month_number
-    from `fundment-takehome-dw.fees.clean_fees` as cf
+    from `fundment-dw.fees.clean_fees` as cf
     inner join first_fees as ff
         on cf.client_id = ff.client_id
 ),
