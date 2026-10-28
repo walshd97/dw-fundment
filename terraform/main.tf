@@ -32,8 +32,44 @@ resource "google_storage_bucket" "raw" {
 }
 
 resource "google_bigquery_dataset" "fees" {
-  dataset_id = "fees"
-  location   = var.region
+  dataset_id                 = var.dataset_id
+  location                   = var.region
+  delete_contents_on_destryo = false
 
   depends_on = [google_project_service.bigquery]
+}
+
+resource "google_bigquery_table" "raw_fees" {
+  dataset_id = google_bigquery_dataset.fees.dataset_id
+  table_id   = "raw_fees"
+
+  schema = jsonencode([
+    {
+      name = "client_id"
+      type = "STRING"
+      mode = "NULLABLE"
+    },
+    {
+      name = "client_nino"
+      type = "STRING"
+      mode = "NULLABLE"
+    },
+    {
+      name = "adviser_id"
+      type = "STRING"
+      mode = "NULLABLE"
+    },
+    {
+      name = "fee_date"
+      type = "DATE"
+      mode = "NULLABLE"
+    },
+    {
+      name = "fee_amount"
+      type = "NUMERIC"
+      mode = "NULLABLE"
+    }
+  ])
+
+  deletion_protection = false
 }
