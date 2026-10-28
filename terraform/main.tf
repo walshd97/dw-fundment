@@ -34,7 +34,7 @@ resource "google_storage_bucket" "raw" {
 resource "google_bigquery_dataset" "fees" {
   dataset_id                 = var.dataset_id
   location                   = var.region
-  delete_contents_on_destryo = false
+  delete_contents_on_destroy = false
 
   depends_on = [google_project_service.bigquery]
 }
