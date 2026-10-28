@@ -1,4 +1,4 @@
-CREATE OR REPLACE TABLE `fundment-dw.fees.adviser_six_month_ltv` AS
+CREATE OR REPLACE TABLE `fundment-dw.fees.adviser_ltv` AS
 
 with first_fees as (
     select
@@ -43,14 +43,14 @@ adviser_totals as (
   select 
     adviser_id,
     count(distinct client_id) as number_of_clients,
-    round(sum(fee_amount), 2) as total_six_month_ltv,
+    round(sum(fee_amount), 2) as total_six_month_ltv
   from fees_with_month_number
   where month_number <= 6
   group by adviser_id
 )
 
 select
-  row_number() over(order by total_six_month_ltv desc) as adviser_rank,
+  dense_rank() over(order by total_six_month_ltv desc) as adviser_rank,
   adviser_id, 
   number_of_clients,
   total_six_month_ltv
