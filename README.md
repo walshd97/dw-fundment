@@ -1,35 +1,3 @@
-## solution
-
-### Overview
-
-This repository contains a basic analytics pipeline allowing users to analyse Fundment Client Platform fees.
-
-The solution will:
-
-1) Store the raw CSV in Google Cloud Storage
-2) Loads the raw data into BigQuery
-3) Creates a standardised fee tables
-4) Calcualtes client level lifetime value (LTV)
-5) Produces both cohort and adviser-level analysis
-
-The solution utilises Terraform for infrastrucutre and BigQuery SQL for transformations and creation of tables.
-
-### architecture
-```text
-        CSV
-         ↓
-Google Cloud Storage
-         ↓
- BigQuery: raw_fees
-         ↓
-BigQuery: clean_fees
-         ↓
-BigQuery: client_ltv
-          cohort_ltv
-          adviser_ltv
-
-
-
 Data Engineer – Take-Home Exercise
 
 Overview
@@ -173,3 +141,134 @@ If something is ambiguous, make a reasonable assumption and document it.
 If you choose not to implement something, explain why.
 
 Thank you for your time and effort. We appreciate it!
+
+=========================================
+
+## Solution
+
+### Overview
+
+This repository contains a basic analytics pipeline allowing users to analyse Fundment Client Platform fees.
+
+The solution will:
+
+1) Store the raw CSV in Google Cloud Storage
+2) Loads the raw data into BigQuery
+3) Creates a standardised fee table
+4) Calculates client level lifetime value (LTV)
+5) Produces both cohort and adviser-level analysis
+
+The solution utilises Terraform for infrastructure and BigQuery SQL for transformations and creation of tables.
+
+### Architecture
+```text
+        CSV
+         ↓
+Google Cloud Storage
+         ↓
+ BigQuery: raw_fees
+         ↓
+BigQuery: clean_fees
+         ↓
+BigQuery: client_ltv
+          cohort_ltv
+          adviser_ltv
+```
+
+### Data Model
+The source contains 51,697 rows, 5,200 clients and 5 advisers. Exact duplicate handling removes 119 excess rows. Two negative fee records are retained as potential corrections. Below lists the data model created to answer analyst questions.
+
+#### Raw Layer: 
+
+- `fees.raw_fees`
+	- Contains the source data as loaded into BigQuery and is not modified by transformation logic.
+
+#### Standardised Layer: 
+
+- `fees.clean_fees`
+	- Removes exact duplicate rows
+	- Applies the expected data types
+	- Provides the input for tables in the Analytics Layer
+
+#### Analytics Layer:
+
+- `fees.client_ltv`
+	- One row per client containing
+		- Date of first fee
+		- One month LTV
+		- Three month LTV (Null if not applicable)
+		- Six month LTV (Null if not applicable)
+
+- `fees.cohort_ltv`
+	- One row per cohort containing
+		- Cohort month (2025-01-01 etc)
+		- Number of clients in cohort
+		- Total six month LTV
+		- Average six month LTV
+
+- `fees.adviser_ltv`
+	- One row per adviser containing
+		- Number of clients
+		- Total six month client LTV
+		- Adviser ranking
+
+### KPIs
+
+#### Lifetime Value (LTV)
+
+A client's first fee month is treated as month 1 meaning `month 3` is 2 calendar months after the first fee month.
+
+For example, the cohort of January 2025 has a six month window from January to June inclusive. Fees are summed across all fee records within the relevant window, including corrections. 
+
+Clients will only be included in a six month LTV calculation where the dataset contains a complete six month observation window.
+
+#### Adviser Attribution
+
+Adviser LTV is attributed at fee level using the adviser recorded on each fee.
+
+This means:
+- A client can contribute fees to more than one adviser if their adviser changed.
+- Each fee is counted once.
+- Adviser totals reconcile to the fee-level client LTV totals.
+- Adviser ranking is based on total fees attributed during each client’s first six months.
+This approach reflects adviser assignment at the time the fee was charged and avoids assigning a client’s entire value to only one adviser.
+
+### Assumptions & tradeoffs
+- Exact duplicates are removed from the standardised layer
+- `client_nino` is treated as personally identifiable information (PII) and should not be used as part of analysis. In a production environment, this information would be redacted or access limited.
+- Separate `client` and `adviser` dimension tables were not created because the data did not contain any additional attributes.
+- SQL queries use `CREATE OR REPLACE TABLE` to make reruns deterministic.
+- Data quality checks have not yet been implemented but would need to be going forward ensuring. BigQuery assertions could be used for this
+
+### Pipeline execution
+
+Terraform provisions the Cloud Storage bucket, BigQuery dataset and raw table schema.
+
+The batch pipeline is run with:
+
+```bash
+terraform -chdir=terraform apply
+./scripts/run_pipeline.sh
+```
+
+The script uploads the CSV, replaces the raw BigQuery table and executes the SQL models in order
+
+### Auditing
+The raw layer is retained so analytics results can be traced back to the source if needed
+
+### Backfills and reprocessing
+
+For a backfill, the source data would be reloaded and the standardised and analytics tables rebuilt. Results would then be reconciled against the previous output.
+
+### Schema Changes
+- As the `main.tf` file specifies the schema of the `google_bigquery_table.raw_fees`, any new columns would have to be discussed in advance because new columns would cause the CSV load step to fail.
+
+### Evolution
+For future evolution there are a few things which would need to be considered or implemented:
+- CI/CD pipelines to manage Terraform and SQL validation. Prevents untested/unapproved changes being deployed into production. This can go along with separate DEV/UAT/PROD environments.
+- Creation and scheduling of jobs to ensure regular updating of the Analytics Layer tables.
+- Automated data quality checks
+- Consider partitioning of data by date when working with larger scale as this helps with querying.
+- Consolidated data dictionaries, data lineage graphs and entity relationships diagrams when working with more tables and more data sources
+
+------------------------
